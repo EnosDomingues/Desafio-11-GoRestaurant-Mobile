@@ -59,21 +59,37 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     async function loadFoods(): Promise<void> {
-      if (searchValue === '') {
-        const loadedFoods = await api.get('/foods').then(response => {
-          return response.data as Food[];
-        });
+      let queryParams = {};
 
-        setFoods(loadedFoods);
+      if (selectedCategory && searchValue) {
+        queryParams = {
+          params: {
+            category_like: selectedCategory,
+            name_like: searchValue,
+          },
+        };
+      } else if (selectedCategory) {
+        queryParams = {
+          params: {
+            category_like: selectedCategory,
+          },
+        };
+      } else if (searchValue) {
+        queryParams = {
+          params: {
+            name_like: searchValue,
+          },
+        };
       }
 
-      const loadedFoods = await api
-        .get(`/foods?name_like=${searchValue}`)
-        .then(response => {
-          return response.data as Food[];
-        });
+      const response = await api.get('/foods', queryParams);
 
-      setFoods(loadedFoods);
+      const initialFoods = response.data.map(item => {
+        item.formattedPrice = formatValue(item.price);
+        return item;
+      });
+
+      setFoods(initialFoods);
     }
 
     loadFoods();
@@ -91,13 +107,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   async function handleSelectCategory(id: number): Promise<void> {
-    const loadedFoods = await api
-      .get(`/foods?category_like=${id}`)
-      .then(response => {
-        return response.data as Food[];
-      });
-
-    setFoods(loadedFoods);
+    setSelectedCategory(id);
   }
 
   return (
